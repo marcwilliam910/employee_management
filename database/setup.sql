@@ -1,0 +1,17 @@
+CREATE TABLE Employees (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(100) NOT NULL,
+    email NVARCHAR(100) NOT NULL UNIQUE,
+    position NVARCHAR(100) NOT NULL,
+    department NVARCHAR(100) NOT NULL,
+    salary DECIMAL(10,2) NOT NULL,
+    dateHired DATE NOT NULL
+);
+GO
+
+CREATE TABLE Users (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    username NVARCHAR(50) NOT NULL UNIQUE,
+    passwordHash NVARCHAR(255) NOT NULL
+);
+GO
