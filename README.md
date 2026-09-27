@@ -12,7 +12,7 @@ A full-stack Employee Management system with a ReactJS and Ant Design frontend, 
 ### 1. Start SQL Server with Docker
 
 ```bash
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourPassword123!" -p 1433:1433 --name mssql-exam -d mcr.microsoft.com/mssql/server:2022-latest
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=MyExam2026!" -p 1433:1433 --name mssql-exam -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
 Wait about 20–30 seconds for the container to finish starting.
@@ -32,8 +32,8 @@ Then run [`database/setup.sql`](database/setup.sql) while connected to `exam_db`
 **sqlcmd example:**
 
 ```bash
-sqlcmd -S localhost,1433 -U sa -P "YourPassword123!" -Q "CREATE DATABASE exam_db"
-sqlcmd -S localhost,1433 -U sa -P "YourPassword123!" -d exam_db -i database/setup.sql
+sqlcmd -S localhost,1433 -U sa -P "MyExam2026!" -Q "CREATE DATABASE exam_db"
+sqlcmd -S localhost,1433 -U sa -P "MyExam2026!" -d exam_db -i database/setup.sql
 ```
 
 ### 3. Backend
