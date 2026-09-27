@@ -1,6 +1,13 @@
 import {Response} from "express";
+import PDFDocument from "pdfkit";
 import {getPool, sql} from "../config/db";
 import {AuthRequest} from "../middleware/auth";
+
+const formatMoney = (value: number) =>
+  Number(value).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 export const getReportSummary = async (req: AuthRequest, res: Response) => {
   try {
@@ -17,6 +24,77 @@ export const getReportSummary = async (req: AuthRequest, res: Response) => {
     res.json(result.recordset);
   } catch (err: any) {
     res.status(500).json({message: "Server error", error: err.message});
+  }
+};
+
+export const getReportPdf = async (req: AuthRequest, res: Response) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request().query(`
+      SELECT department,
+             COUNT(*) AS employeeCount,
+             SUM(salary) AS totalSalary,
+             AVG(salary) AS averageSalary
+      FROM Employees
+      GROUP BY department
+      ORDER BY department
+    `);
+
+    const rows = result.recordset;
+    const doc = new PDFDocument({margin: 50, size: "A4"});
+    const filename = `department-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    doc.pipe(res);
+
+    doc.fontSize(18).text("Department Report", {align: "center"});
+    doc.moveDown(0.5);
+    doc
+      .fontSize(10)
+      .fillColor("#555555")
+      .text(`Generated: ${new Date().toLocaleString()}`, {align: "center"});
+    doc.moveDown(1.5);
+    doc.fillColor("#000000");
+
+    const colX = [50, 200, 310, 430];
+    const rowHeight = 22;
+    let y = doc.y;
+
+    doc.fontSize(11).font("Helvetica-Bold");
+    doc.text("Department", colX[0], y);
+    doc.text("Employees", colX[1], y);
+    doc.text("Total Salary", colX[2], y);
+    doc.text("Avg Salary", colX[3], y);
+    y += rowHeight;
+    doc
+      .moveTo(50, y - 6)
+      .lineTo(545, y - 6)
+      .stroke();
+
+    doc.font("Helvetica").fontSize(10);
+
+    if (rows.length === 0) {
+      doc.text("No employees found.", 50, y);
+    } else {
+      for (const row of rows) {
+        if (y > 750) {
+          doc.addPage();
+          y = 50;
+        }
+        doc.text(String(row.department), colX[0], y, {width: 140});
+        doc.text(String(row.employeeCount), colX[1], y);
+        doc.text(formatMoney(row.totalSalary), colX[2], y);
+        doc.text(formatMoney(row.averageSalary), colX[3], y);
+        y += rowHeight;
+      }
+    }
+
+    doc.end();
+  } catch (err: any) {
+    if (!res.headersSent) {
+      res.status(500).json({message: "Server error", error: err.message});
+    }
   }
 };
 

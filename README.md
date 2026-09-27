@@ -74,6 +74,7 @@ Open the Vite URL shown in the terminal (usually `http://localhost:5173`), then 
 - `PUT /api/employees/:id` — update employee
 - `DELETE /api/employees/:id` — delete employee
 - `GET /api/employees/report/summary` — department report (count, total salary, average salary)
+- `GET /api/employees/report/pdf` — download department report as PDF
 
 All employee routes require `Authorization: Bearer <token>`.
 
