@@ -66,4 +66,41 @@ router.get("/:id", async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.put("/:id", async (req: AuthRequest, res: Response) => {
+  const {name, email, position, department, salary, dateHired} = req.body;
+
+  if (!name || !email || !position || !department || !salary || !dateHired) {
+    return res.status(400).json({message: "All fields are required"});
+  }
+
+  try {
+    const pool = await getPool();
+    const result = await pool
+      .request()
+      .input("id", sql.Int, req.params.id)
+      .input("name", sql.NVarChar, name)
+      .input("email", sql.NVarChar, email)
+      .input("position", sql.NVarChar, position)
+      .input("department", sql.NVarChar, department)
+      .input("salary", sql.Decimal(10, 2), salary)
+      .input("dateHired", sql.Date, dateHired)
+      .query(`UPDATE Employees
+              SET name = @name, email = @email, position = @position,
+                  department = @department, salary = @salary, dateHired = @dateHired
+              OUTPUT INSERTED.*
+              WHERE id = @id`);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({message: "Employee not found"});
+    }
+
+    res.json(result.recordset[0]);
+  } catch (err: any) {
+    if (err.number === 2627) {
+      return res.status(409).json({message: "Email already exists"});
+    }
+    res.status(500).json({message: "Server error", error: err.message});
+  }
+});
+
 export default router;
