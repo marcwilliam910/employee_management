@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import {getPool} from "./config/db";
 import authRoutes from "./routes/auth";
+import employeeRoutes from "./routes/employees";
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.get("/api/health", async (req: Request, res: Response) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/employees", employeeRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
