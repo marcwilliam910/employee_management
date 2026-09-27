@@ -6,6 +6,24 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get("/report/summary", async (req: AuthRequest, res: Response) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request().query(`
+      SELECT department,
+             COUNT(*) AS employeeCount,
+             SUM(salary) AS totalSalary,
+             AVG(salary) AS averageSalary
+      FROM Employees
+      GROUP BY department
+      ORDER BY department
+    `);
+    res.json(result.recordset);
+  } catch (err: any) {
+    res.status(500).json({message: "Server error", error: err.message});
+  }
+});
+
 router.post("/", async (req: AuthRequest, res: Response) => {
   const {name, email, position, department, salary, dateHired} = req.body;
 
