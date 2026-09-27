@@ -2,6 +2,7 @@ import {BrowserRouter, Routes, Route, Navigate} from "react-router-dom";
 import {AuthProvider} from "./context/AuthContext";
 import {ProtectedRoute} from "./components/ProtectedRoute";
 import Login from "./pages/Login";
+import Employees from "./pages/Employees";
 
 function App() {
   return (
@@ -13,7 +14,7 @@ function App() {
             path="/employees"
             element={
               <ProtectedRoute>
-                <div>Employees page (next step)</div>
+                <Employees />
               </ProtectedRoute>
             }
           />

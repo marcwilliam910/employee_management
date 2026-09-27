@@ -17,3 +17,12 @@ export interface Employee {
   salary: number;
   dateHired: string;
 }
+
+export interface EmployeeInput {
+  name: string;
+  email: string;
+  position: string;
+  department: string;
+  salary: number;
+  dateHired: string;
+}
