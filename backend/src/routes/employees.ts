@@ -103,4 +103,22 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.delete("/:id", async (req: AuthRequest, res: Response) => {
+  try {
+    const pool = await getPool();
+    const result = await pool
+      .request()
+      .input("id", sql.Int, req.params.id)
+      .query("DELETE FROM Employees OUTPUT DELETED.* WHERE id = @id");
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({message: "Employee not found"});
+    }
+
+    res.json({message: "Employee deleted"});
+  } catch (err: any) {
+    res.status(500).json({message: "Server error", error: err.message});
+  }
+});
+
 export default router;
