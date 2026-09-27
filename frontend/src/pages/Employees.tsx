@@ -10,6 +10,9 @@ import {
   message,
   Popconfirm,
   Layout,
+  Alert,
+  Typography,
+  Space,
 } from "antd";
 import dayjs from "dayjs";
 import {useNavigate} from "react-router-dom";
@@ -17,10 +20,19 @@ import api from "../api/axios";
 import {useAuth} from "../context/AuthContext";
 import type {Employee, EmployeeInput} from "../types";
 
+const formatSalary = (value: number) =>
+  Number(value).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
 const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editing, setEditing] = useState<Employee | null>(null);
   const [form] = Form.useForm();
   const {logout} = useAuth();
@@ -28,11 +40,14 @@ const Employees = () => {
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await api.get<Employee[]>("/employees");
       setEmployees(res.data);
-    } catch (err) {
-      message.error("Failed to load employees");
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "Failed to load employees";
+      setError(msg);
+      message.error(msg);
     } finally {
       setLoading(false);
     }
@@ -58,23 +73,27 @@ const Employees = () => {
   };
 
   const handleDelete = async (id: number) => {
+    setDeletingId(id);
     try {
       await api.delete(`/employees/${id}`);
       message.success("Employee deleted");
-      load();
-    } catch (err) {
-      message.error("Failed to delete employee");
+      await load();
+    } catch (err: any) {
+      message.error(err.response?.data?.message || "Failed to delete employee");
+    } finally {
+      setDeletingId(null);
     }
   };
 
   const handleSubmit = async () => {
-    const values = await form.validateFields();
-    const payload: EmployeeInput = {
-      ...values,
-      dateHired: values.dateHired.format("YYYY-MM-DD"),
-    };
-
     try {
+      const values = await form.validateFields();
+      const payload: EmployeeInput = {
+        ...values,
+        dateHired: values.dateHired.format("YYYY-MM-DD"),
+      };
+
+      setSaving(true);
       if (editing) {
         await api.put(`/employees/${editing.id}`, payload);
         message.success("Employee updated");
@@ -83,9 +102,12 @@ const Employees = () => {
         message.success("Employee created");
       }
       setModalOpen(false);
-      load();
+      await load();
     } catch (err: any) {
+      if (err?.errorFields) return;
       message.error(err.response?.data?.message || "Save failed");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -94,7 +116,11 @@ const Employees = () => {
     {title: "Email", dataIndex: "email"},
     {title: "Position", dataIndex: "position"},
     {title: "Department", dataIndex: "department"},
-    {title: "Salary", dataIndex: "salary"},
+    {
+      title: "Salary",
+      dataIndex: "salary",
+      render: (v: number) => formatSalary(v),
+    },
     {
       title: "Date Hired",
       dataIndex: "dateHired",
@@ -103,50 +129,81 @@ const Employees = () => {
     {
       title: "Actions",
       render: (_: any, record: Employee) => (
-        <>
+        <Space>
           <Button
             size="small"
             onClick={() => openEdit(record)}
-            style={{marginRight: 8}}
+            disabled={deletingId === record.id}
           >
             Edit
           </Button>
           <Popconfirm
             title="Delete this employee?"
             onConfirm={() => handleDelete(record.id)}
+            disabled={deletingId === record.id}
           >
-            <Button size="small" danger>
+            <Button
+              size="small"
+              danger
+              loading={deletingId === record.id}
+            >
               Delete
             </Button>
           </Popconfirm>
-        </>
+        </Space>
       ),
     },
   ];
 
   return (
-    <Layout style={{padding: 24}}>
+    <Layout style={{minHeight: "100vh", padding: 24, background: "#f5f5f5"}}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
           marginBottom: 16,
         }}
       >
-        <div>
-          <Button type="primary" onClick={openCreate} style={{marginRight: 8}}>
+        <Typography.Title level={3} style={{margin: 0}}>
+          Employees
+        </Typography.Title>
+        <Space>
+          <Button type="primary" onClick={openCreate}>
             Add Employee
           </Button>
           <Button onClick={() => navigate("/report")}>View Report</Button>
-        </div>
-        <Button onClick={logout}>Logout</Button>
+          <Button
+            onClick={() => {
+              logout();
+              navigate("/login");
+            }}
+          >
+            Logout
+          </Button>
+        </Space>
       </div>
+
+      {error && (
+        <Alert
+          type="error"
+          showIcon
+          message={error}
+          action={
+            <Button size="small" onClick={load} loading={loading}>
+              Retry
+            </Button>
+          }
+          style={{marginBottom: 16}}
+        />
+      )}
 
       <Table
         rowKey="id"
         columns={columns}
         dataSource={employees}
         loading={loading}
+        locale={{emptyText: error ? " " : "No employees yet"}}
       />
 
       <Modal
@@ -154,8 +211,12 @@ const Employees = () => {
         open={modalOpen}
         onOk={handleSubmit}
         onCancel={() => setModalOpen(false)}
+        confirmLoading={saving}
+        okButtonProps={{disabled: saving}}
+        cancelButtonProps={{disabled: saving}}
+        destroyOnHidden
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" disabled={saving}>
           <Form.Item name="name" label="Name" rules={[{required: true}]}>
             <Input />
           </Form.Item>

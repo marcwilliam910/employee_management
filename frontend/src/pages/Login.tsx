@@ -1,3 +1,4 @@
+import {useState} from "react";
 import {Form, Input, Button, Card, message} from "antd";
 import {useNavigate} from "react-router-dom";
 import api from "../api/axios";
@@ -12,8 +13,10 @@ interface LoginForm {
 const Login = () => {
   const navigate = useNavigate();
   const {login} = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const onFinish = async (values: LoginForm) => {
+    setLoading(true);
     try {
       const res = await api.post<LoginResponse>("/auth/login", values);
       login(res.data.user, res.data.token);
@@ -21,19 +24,29 @@ const Login = () => {
       navigate("/employees");
     } catch (err: any) {
       message.error(err.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{display: "flex", justifyContent: "center", marginTop: 100}}>
-      <Card title="Login" style={{width: 350}}>
-        <Form onFinish={onFinish} layout="vertical">
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "#f5f5f5",
+      }}
+    >
+      <Card title="Employee Management" style={{width: 360}}>
+        <Form onFinish={onFinish} layout="vertical" disabled={loading}>
           <Form.Item
             label="Username"
             name="username"
             rules={[{required: true, message: "Username is required"}]}
           >
-            <Input />
+            <Input autoFocus />
           </Form.Item>
           <Form.Item
             label="Password"
@@ -42,7 +55,7 @@ const Login = () => {
           >
             <Input.Password />
           </Form.Item>
-          <Button type="primary" htmlType="submit" block>
+          <Button type="primary" htmlType="submit" block loading={loading}>
             Log In
           </Button>
         </Form>
