@@ -12,6 +12,7 @@ import {
   Layout,
 } from "antd";
 import dayjs from "dayjs";
+import {useNavigate} from "react-router-dom";
 import api from "../api/axios";
 import {useAuth} from "../context/AuthContext";
 import type {Employee, EmployeeInput} from "../types";
@@ -23,6 +24,7 @@ const Employees = () => {
   const [editing, setEditing] = useState<Employee | null>(null);
   const [form] = Form.useForm();
   const {logout} = useAuth();
+  const navigate = useNavigate();
 
   const load = async () => {
     setLoading(true);
@@ -131,9 +133,12 @@ const Employees = () => {
           marginBottom: 16,
         }}
       >
-        <Button type="primary" onClick={openCreate}>
-          Add Employee
-        </Button>
+        <div>
+          <Button type="primary" onClick={openCreate} style={{marginRight: 8}}>
+            Add Employee
+          </Button>
+          <Button onClick={() => navigate("/report")}>View Report</Button>
+        </div>
         <Button onClick={logout}>Logout</Button>
       </div>
 

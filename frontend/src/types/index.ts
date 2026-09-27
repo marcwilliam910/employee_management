@@ -26,3 +26,10 @@ export interface EmployeeInput {
   salary: number;
   dateHired: string;
 }
+
+export interface DepartmentReport {
+  department: string;
+  employeeCount: number;
+  totalSalary: number;
+  averageSalary: number;
+}
